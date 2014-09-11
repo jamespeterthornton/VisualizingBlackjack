@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<style>
+  .dot {
+    stroke: #000;
+  }
+  p {
+
+    text-align: center;
+  }
+
+  h1, h3 {
+
+    text-align: center;
+
+  }
+
+  .axis path,
+  .axis line {
+
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+
+  }
+
+  .button {
+
+      position: absolute;
+
+  }
+
+  .figure {
+
+
+      text-align: center;
+
+  }
+    
+</style>
+<body>
+
+<h1>Visualizing Blackjack</h1>
+<h3>James Thornton</h3>
+
+<p> Ok, so I haven't exactly visualized the game of Blackjack. But, I think we're all familiar with the idea that when you're counting cards in Blackjack, you're basically trying to predict whether the next card the deck produces will be high or low. So, I wanted to start with card counting and create a few visualizations that would explore the mathematical shape of a randomly shuffled deck of cards.</p>
+
+<p>I made fourteen cards and called them a suit. I made four suits and called them a deck. I made five decks and called that var deck. I used the <a href="http://bost.ocks.org/mike/shuffle/"> Fisher-Yates Shuffle </a> to randomize the deck, and I used d3 (the library those visualizations were written in) to create these visualizations. Once I had a randomly shuffled deck of 260 cards, I cut it, and took only the first half.(1) </p>
+
+<p> Here is the first visualization: the values of the cards, presented in the order they would be dealt:</p>
+
+<div id="deckChart" class="figure"></div>
+<div class="figure">
+<input id="clickMe" type="button" value="Deal" class = "button"/>
+</div>
+
+ <br>
+  <br>
+
+<div>
+ 
+<p> So, that's interesting. All it really told us, though, is that the most common value is 10. Hopefully we already knew that, since 10s, Jacks, Queens, and Kings all have that value.</p>
+
+<p> The next thing I wanted to visualize was the count of the deck. I began the count at zero, and incremented whenever a card with a value greater than nine was delt, and decremented whenever a value less than 6 was dealt. Here is a visualization of the count after each card dealt:<p>
+</div>
+
+<div id="countChart" class="figure"></div>
+<div class="figure">
+
+<input id="clickMe2" type="button" value="Deal" class = "button"/>
+</div>
+<br>
+<br>
+
+<p> Hmmm. Why doesn't the count come back to zero? Oh, right - we're cutting the full deck (260 cards) off in the middle (at 130). So... the full five decks would actually look like this: </p>
+
+<div id="fullCountChart" class="figure"></div>
+<div class="figure">
+
+<input id="clickMe3" type="button" value="Deal" class = "button"/>
+</div>
+<br>
+<br>
+<p> As you can see, when we take the full deck of cards, the count will always return to zero. So, we can say that whenever casinos began to adopt the practice of using only the first half of the large deck, they were making the right call. If we don't know all of the cards in the deck, then there is no way to say with certainty that some cards will be dealt by the end.</p> 
+
+<p> Of course, that's fairly obvious. To find out anything meaningful, we'll need to go a little bit further. I haven't done much more yet, though, and so I suppose this is... to be continued. Someday. For now, feel free to play around with the deal button and just get a feel for how the count of the deck can change with each random shuffle.
+
+<br>
+<br>
+<p>Footnotes</p>
+<p> (1) This simulates a casino that shuffles five decks and takes the first half of the cut. I assumed that the shuffle would be as close to random as possible. If anyone wants to modify this code to run the visualizations with other shuffling methods, or if anyone wants to email me other shuffling methods to run, go for it.</p>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script language="javascript" type="text/javascript">
+
+document.getElementById("clickMe").onclick = newDeal;
+document.getElementById("clickMe2").onclick = newDeal;
+document.getElementById("clickMe3").onclick = newDeal;
+
+newDeal();
+
+function newDeal () {
+
+    d3.selectAll("svg").remove();
+
+    function makeDeck() {
+
+      var deck = [];
+      for(i = 0; i<6; i++) {
+       for(j=0; j<4; j++) {
+         for(k=2; k<=14; k++) {
+           if(k>11){
+             deck.push(10);
+           } else {
+            deck.push(k);   
+           }
+         }
+       } 
+      }
+
+      var indexToPull;
+      var temp;
+
+      for(l=deck.length-1; l >= 0; l--) {
+        var indexToPull = Math.floor(Math.random() * l);
+        var temp = deck[indexToPull];
+        deck[indexToPull] = deck[l];
+        deck[l] = temp;
+      }
+
+
+
+      var deckObject = [];
+
+      for(i=0; i<deck.length; i++) {
+        deckObject[i] = [i, deck[i]];
+      }
+      return deckObject;
+    }
+
+
+
+    var newDeck = makeDeck();
+
+    var cutDeck = newDeck.slice(0, newDeck.length/2);
+
+    var count = 0;
+    var countDeck = [];
+
+    for (i = 0; i<newDeck.length; i++) {
+
+      if (newDeck[i][1]>9) count++;
+      else if (newDeck[i][1]<7) count --;
+
+      countDeck[i] = [i, count];
+
+    }
+
+    var cutCountDeck = countDeck.slice(0,countDeck.length/2);
+
+
+    d3.select("#deckChart").data([cutDeck]).attr("d",newDeck);
+    d3.select("#countChart").data([cutCountDeck]);
+    d3.select("#fullCountChart").data([countDeck]);
+
+  var deckChart = makeChart().yAxisText("Value");
+  var countChart = makeChart().yAxisText("Count").yMin(-20).yMax(20);
+
+
+  d3.select("#deckChart").call(deckChart);
+  d3.select("#countChart").call(countChart);
+  d3.select("#fullCountChart").call(countChart);
+
+  function makeChart() {
+
+    var yAxisText = "Count";
+    var yMin = 2;
+    var yMax = 11;
+
+    function chart(selection) {
+
+          selection.each(function(data){
+
+              var margin = {top: 20, bottom: 50, left: 50, right: 20},
+                      height = 400 - margin.top - margin.bottom,
+                      width = 400 - margin.right - margin.left;
+
+              var svg = d3.select(this).append("svg")
+                          .attr("width", width + margin.left + margin.right)
+                          .attr("height",height + margin.top + margin.bottom)
+                          .append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+              var xScale = d3.scale.linear().domain([0,data.length]).range([0, width]),
+                  yScale = d3.scale.linear().domain([yMin,yMax]).range([height, 0]);
+
+              var xMap = function(d){return xScale(d[0])},
+                  yMap = function(d){return yScale(d[1])};
+
+              var xAxis = d3.svg.axis().scale(xScale).orient("bottom"),
+                  yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+              svg.append("g")
+                  .attr("class", "axis")
+                  .call(xAxis)
+                  .attr("transform", "translate(" + 0 + "," + height + ")")
+                  .append("text")
+                  .text("Card")
+                  .attr("x", width/2)
+                  .attr("y", 40)
+                  .style("text-anchor", "center");
+
+              svg.append("g")
+                  .attr("class", "axis")
+                  .call(yAxis).append("text")
+                  .text(yAxisText)
+                  .attr("x", -height/2)
+                  .attr("y", -30)
+                  .attr("transform", "rotate(-90)");
+
+              svg.selectAll(".dot")
+                  .data(data)
+                  .enter()
+                  .append("circle")
+                  .attr("r", 2)
+                  .attr("class", "dot")
+                  .attr("fill", "black")
+                  .attr("cx", xMap)
+                  .attr("cy", yMap);
+
+            });
+    }
+
+    chart.yAxisText = function(text) {
+        if(!arguments.length) return yAxisText;
+        yAxisText = text;
+        return chart;
+    }
+
+
+    chart.yMin = function(y) {
+
+      if(!arguments.length) return yMin;
+      yMin = y;
+      return chart;
+    }
+
+    chart.yMax = function(y) {
+
+      if(!arguments.length) return yMax;
+      yMax = y;
+      return chart;
+    }
+
+    return chart;
+  }
+
+}
+
+
+
+</script>
+</body>
+</html> 
